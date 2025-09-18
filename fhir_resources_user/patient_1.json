@@ -1,0 +1,54 @@
+{
+  "resourceType": "Patient",
+  "id": "e756ec95-e97c-4af2-91f9-79177fefd3b0",
+  "identifier": [
+    {
+      "use": "usual",
+      "type": {
+        "coding": [
+          {
+            "system": "http://terminology.hl7.org/CodeSystem/v2-0203",
+            "code": "MR",
+            "display": "Medical Record Number"
+          }
+        ]
+      },
+      "value": ""
+    }
+  ],
+  "name": [
+    {
+      "use": "official",
+      "family": "Yadav",
+      "given": [
+        "Daksh"
+      ]
+    }
+  ],
+  "gender": "male",
+  "birthDate": "",
+  "address": [
+    {
+      "use": "home",
+      "line": [
+        ""
+      ],
+      "city": "",
+      "state": "",
+      "postalCode": "",
+      "country": "US"
+    }
+  ],
+  "telecom": [
+    {
+      "system": "phone",
+      "value": "",
+      "use": "home"
+    },
+    {
+      "system": "email",
+      "value": "",
+      "use": "home"
+    }
+  ]
+}

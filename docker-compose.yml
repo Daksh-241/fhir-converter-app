@@ -1,0 +1,25 @@
+﻿version: '3.8'
+
+services:
+  fhir-module:
+    build: .
+    container_name: fhir-excel-converter
+    volumes:
+      - ./mapping 4.xlsx:/app/mapping 4.xlsx:ro
+      - ./output:/app/output
+    environment:
+      - PYTHONUNBUFFERED=1
+    command: python worker.py
+    restart: unless-stopped
+
+  fhir-test:
+    build: .
+    container_name: fhir-test
+    volumes:
+      - ./mapping 4.xlsx:/app/mapping 4.xlsx:ro
+      - ./test_output:/app/test_output
+    environment:
+      - PYTHONUNBUFFERED=1
+    command: python test_fhir.py
+    depends_on:
+      - fhir-module

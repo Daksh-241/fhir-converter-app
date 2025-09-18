@@ -1,0 +1,21 @@
+﻿# Quick Team Access with ngrok
+# Download ngrok from: https://ngrok.com/download
+
+echo " QUICK TEAM ACCESS SETUP"
+echo "=========================="
+echo ""
+echo "OPTION 1: IMMEDIATE ACCESS (ngrok)"
+echo "1. Download ngrok from: https://ngrok.com/download"
+echo "2. Extract ngrok.exe to this folder"
+echo "3. Run: ngrok http 5000"
+echo "4. Share the https URL with your team"
+echo "5. Example: https://abc123.ngrok.io"
+echo ""
+echo "OPTION 2: LOCAL NETWORK ACCESS"
+echo "  Share this IP: 172.20.72.222"
+echo "  Team URL: http://172.20.72.222:5000"
+echo "  Works only when your computer is on"
+echo ""
+echo "OPTION 3: CLOUD DEPLOYMENT"
+echo "  See TEAM_SHARING_GUIDE.txt for details"
+echo ""

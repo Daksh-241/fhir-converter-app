@@ -1,0 +1,54 @@
+{
+  "resourceType": "Patient",
+  "id": "dac9f032-d352-46c3-a0f3-7b2505c09665",
+  "identifier": [
+    {
+      "use": "usual",
+      "type": {
+        "coding": [
+          {
+            "system": "http://terminology.hl7.org/CodeSystem/v2-0203",
+            "code": "MR",
+            "display": "Medical Record Number"
+          }
+        ]
+      },
+      "value": "dac9f032-d352-46c3-a0f3-7b2505c09665"
+    }
+  ],
+  "name": [
+    {
+      "use": "official",
+      "family": "",
+      "given": [
+        ""
+      ]
+    }
+  ],
+  "gender": "unknown",
+  "birthDate": "",
+  "address": [
+    {
+      "use": "home",
+      "line": [
+        ""
+      ],
+      "city": "",
+      "state": "",
+      "postalCode": "",
+      "country": "US"
+    }
+  ],
+  "telecom": [
+    {
+      "system": "phone",
+      "value": "",
+      "use": "home"
+    },
+    {
+      "system": "email",
+      "value": "",
+      "use": "home"
+    }
+  ]
+}

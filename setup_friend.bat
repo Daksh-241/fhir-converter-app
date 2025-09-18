@@ -1,0 +1,6 @@
+@echo off
+echo Installing FHIR System...
+pip install -r requirements_fullstack.txt
+echo Starting server...
+python app.py
+pause

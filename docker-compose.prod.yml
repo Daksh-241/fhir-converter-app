@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  fhir-api:
+    build: .
+    container_name: fhir-api
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_ENV=production
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./uploads:/app/uploads
+      - ./fhir_bundles:/app/fhir_bundles
+    restart: unless-stopped
+    networks:
+      - fhir-network
+
+  nginx:
+    image: nginx:alpine
+    container_name: fhir-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+      - ./templates:/usr/share/nginx/html
+    depends_on:
+      - fhir-api
+    restart: unless-stopped
+    networks:
+      - fhir-network
+
+networks:
+  fhir-network:
+    driver: bridge
