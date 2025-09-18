@@ -2,7 +2,7 @@
   - type: web
     name: fhir-converter-app
     env: python
-    buildCommand: pip install --upgrade pip && pip install -r requirements_fullstack.txt
+    buildCommand: pip install --upgrade pip && pip install -r requirements.txt
     startCommand: python app.py
     envVars:
       - key: PYTHON_VERSION
