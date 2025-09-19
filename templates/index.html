@@ -66,6 +66,9 @@
                     <li class="nav-item">
                         <a class="nav-link" href="#patient">Patient</a>
                     </li>
+					<li class="nav-item">
+						<a class="nav-link" href="#codes">Codes</a>
+					</li>
                     <li class="nav-item">
                         <a class="nav-link" href="#api">API</a>
                     </li>
@@ -215,6 +218,74 @@
             </div>
         </section>
 
+		<!-- Code Mapping Section -->
+		<section id="codes" class="my-5">
+			<div class="card">
+				<div class="card-header">
+					<h3><i class="fas fa-tags"></i> Map Disease to Codes (ICD-11 / Ayurveda / Siddha / Unani)</h3>
+				</div>
+				<div class="card-body">
+					<form id="codesForm">
+						<div class="row">
+							<div class="col-md-6">
+								<div class="mb-3">
+									<label for="diseaseInput" class="form-label">Disease / Condition</label>
+									<input type="text" class="form-control" id="diseaseInput" placeholder="e.g., Type 2 diabetes mellitus">
+								</div>
+							</div>
+							<div class="col-md-6">
+								<div class="mb-3">
+									<label class="form-label">Or provide any one code</label>
+									<div class="input-group mb-2">
+										<span class="input-group-text">SNOMED</span>
+										<input type="text" class="form-control" id="snomedInput" placeholder="e.g., 44054006">
+									</div>
+									<div class="input-group mb-2">
+										<span class="input-group-text">ICD-11</span>
+										<input type="text" class="form-control" id="icd11Input" placeholder="e.g., 5A11">
+									</div>
+									<div class="input-group mb-2">
+										<span class="input-group-text">Ayurveda</span>
+										<input type="text" class="form-control" id="ayurvedaInput" placeholder="code">
+									</div>
+									<div class="input-group mb-2">
+										<span class="input-group-text">Siddha</span>
+										<input type="text" class="form-control" id="siddhaInput" placeholder="code">
+									</div>
+									<div class="input-group">
+										<span class="input-group-text">Unani</span>
+										<input type="text" class="form-control" id="unaniInput" placeholder="code">
+									</div>
+								</div>
+							</div>
+							<div class="row">
+								<div class="col-md-12 d-flex align-items-end">
+									<button type="submit" class="btn btn-primary w-100"><i class="fas fa-search"></i> Map Codes</button>
+								</div>
+							</div>
+						</div>
+					</form>
+					<div id="codesStatus" class="mt-3"></div>
+					<div id="codesResult" class="mt-3" style="display:none;">
+						<h5>Results</h5>
+						<div class="table-responsive">
+							<table class="table table-bordered">
+								<thead>
+									<tr>
+										<th>System</th>
+										<th>Code</th>
+									</tr>
+								</thead>
+								<tbody id="codesTableBody"></tbody>
+							</table>
+						</div>
+						<h6 class="mt-3">FHIR Condition (preview)</h6>
+						<pre id="conditionJson" class="bg-light p-3 border" style="white-space: pre-wrap;"></pre>
+					</div>
+				</div>
+			</div>
+		</section>
+
         <!-- Results Section -->
         <section id="results" class="my-5" style="display: none;">
             <div class="card">
@@ -266,6 +337,13 @@
                             <p>Check API status</p>
                         </div>
                     </div>
+					<div class="row mt-3">
+						<div class="col-md-6">
+							<h5>Map Codes</h5>
+							<code>POST /api/map-codes</code>
+							<p>Body: { "disease": "Type 2 diabetes mellitus" }</p>
+						</div>
+					</div>
                 </div>
             </div>
         </section>
@@ -342,6 +420,63 @@
                     },
                     body: JSON.stringify(formData)
                 });
+
+		// Codes mapping handling
+		document.getElementById('codesForm').addEventListener('submit', async (e) => {
+			e.preventDefault();
+			const disease = document.getElementById('diseaseInput').value;
+			const snomedCode = document.getElementById('snomedInput') ? document.getElementById('snomedInput').value : '';
+			const icd11Code = document.getElementById('icd11Input') ? document.getElementById('icd11Input').value : '';
+			const ayurvedaCode = document.getElementById('ayurvedaInput') ? document.getElementById('ayurvedaInput').value : '';
+			const siddhaCode = document.getElementById('siddhaInput') ? document.getElementById('siddhaInput').value : '';
+			const unaniCode = document.getElementById('unaniInput') ? document.getElementById('unaniInput').value : '';
+			const statusDiv = document.getElementById('codesStatus');
+			const resultWrap = document.getElementById('codesResult');
+			const tbody = document.getElementById('codesTableBody');
+			const conditionPre = document.getElementById('conditionJson');
+
+			statusDiv.innerHTML = '<div class="alert alert-info">Mapping codes...</div>';
+			resultWrap.style.display = 'none';
+			tbody.innerHTML = '';
+			conditionPre.textContent = '';
+
+			try {
+				const res = await fetch('/api/map-codes', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ disease, snomedCode, icd11Code, ayurvedaCode, siddhaCode, unaniCode })
+				});
+				const data = await res.json();
+				if (!res.ok || !data.success) {
+					statusDiv.innerHTML = `<div class=\"alert alert-danger\">${data.error || 'Failed to map'}</div>`;
+					return;
+				}
+
+				statusDiv.innerHTML = '<div class="alert alert-success">Codes mapped successfully</div>';
+				const rows = [];
+				const m = data.mappings || {};
+				if (m.snomed_code) rows.push({ system: 'SNOMED CT', code: m.snomed_code });
+				if (m.icd11_code) rows.push({ system: 'ICD-11', code: m.icd11_code });
+				if (m.ayurveda_code) rows.push({ system: 'Ayurveda', code: m.ayurveda_code });
+				if (m.siddha_code) rows.push({ system: 'Siddha', code: m.siddha_code });
+				if (m.unani_code) rows.push({ system: 'Unani', code: m.unani_code });
+
+				if (rows.length === 0) {
+					tbody.innerHTML = '<tr><td colspan="2">No codes available</td></tr>';
+				} else {
+					rows.forEach(r => {
+						const tr = document.createElement('tr');
+						tr.innerHTML = `<td>${r.system}</td><td>${r.code}</td>`;
+						tbody.appendChild(tr);
+					});
+				}
+
+				conditionPre.textContent = JSON.stringify(data.condition, null, 2);
+				resultWrap.style.display = 'block';
+			} catch (err) {
+				statusDiv.innerHTML = `<div class=\"alert alert-danger\">${err.message}</div>`;
+			}
+		});
                 
                 const result = await response.json();
                 

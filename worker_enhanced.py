@@ -4,6 +4,7 @@ import json
 from datetime import datetime
 from typing import Dict, List, Any, Optional
 import uuid
+from code_mapping import CodeMappingService
 
 class FHIRModule:
     """Enhanced FHIR Module for processing Excel data, user input, and generating FHIR resources"""
@@ -13,6 +14,7 @@ class FHIRModule:
         self.data = None
         self.fhir_resources = []
         self.user_input_data = []
+        self.code_mapping = CodeMappingService()
         
     def load_excel_data(self) -> bool:
         """Load data from Excel file"""
@@ -212,6 +214,49 @@ class FHIRModule:
         """Generate FHIR Condition resource from data row"""
         condition_id = str(uuid.uuid4())
         
+        # Build primary SNOMED coding (if any)
+        snomed_code = str(row.get('snomed_code', '') or '').strip()
+        condition_name = str(row.get('condition_name', '') or '').strip()
+
+        # Resolve additional codes using mapping service if we have a condition name
+        mapped = self.code_mapping.find_by_disease(condition_name) if condition_name else None
+
+        codings: List[Dict[str, Any]] = []
+        if snomed_code or condition_name:
+            codings.append({
+                "system": "http://snomed.info/sct",
+                "code": snomed_code,
+                "display": condition_name
+            })
+
+        # ICD-11
+        if mapped and mapped.get('icd11_code'):
+            codings.append({
+                "system": self.code_mapping.systems_for_response().get('icd11'),
+                "code": mapped.get('icd11_code'),
+                "display": condition_name or mapped.get('disease', '')
+            })
+
+        # AYUSH: Ayurveda, Siddha, Unani
+        if mapped and mapped.get('ayurveda_code'):
+            codings.append({
+                "system": self.code_mapping.systems_for_response().get('ayurveda'),
+                "code": mapped.get('ayurveda_code'),
+                "display": condition_name or mapped.get('disease', '')
+            })
+        if mapped and mapped.get('siddha_code'):
+            codings.append({
+                "system": self.code_mapping.systems_for_response().get('siddha'),
+                "code": mapped.get('siddha_code'),
+                "display": condition_name or mapped.get('disease', '')
+            })
+        if mapped and mapped.get('unani_code'):
+            codings.append({
+                "system": self.code_mapping.systems_for_response().get('unani'),
+                "code": mapped.get('unani_code'),
+                "display": condition_name or mapped.get('disease', '')
+            })
+
         condition_data = {
             "resourceType": "Condition",
             "id": condition_id,
@@ -245,14 +290,8 @@ class FHIRModule:
                 }
             ],
             "code": {
-                "coding": [
-                    {
-                        "system": "http://snomed.info/sct",
-                        "code": str(row.get('snomed_code', '')),
-                        "display": str(row.get('condition_name', ''))
-                    }
-                ],
-                "text": str(row.get('condition_name', ''))
+                "coding": codings or [],
+                "text": condition_name
             },
             "subject": {
                 "reference": f"Patient/{str(uuid.uuid4())}"

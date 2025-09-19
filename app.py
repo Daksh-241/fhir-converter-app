@@ -9,6 +9,7 @@ from werkzeug.utils import secure_filename
 import io
 import base64
 from worker_enhanced import FHIRModule
+from code_mapping import CodeMappingService
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for frontend integration
@@ -18,6 +19,7 @@ UPLOAD_FOLDER = 'uploads'
 ALLOWED_EXTENSIONS = {'xlsx', 'xls', 'csv'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
+code_mapper = CodeMappingService()
 
 # Create upload directory
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
@@ -180,6 +182,62 @@ def export_csv(bundle_id):
 def health_check():
     """Health check endpoint"""
     return jsonify({'status': 'healthy', 'timestamp': datetime.now().isoformat()})
+
+@app.route('/api/map-codes', methods=['POST'])
+def map_codes():
+    """Map by any identifier (disease or any code) to return all codes and a FHIR Condition."""
+    try:
+        data = request.json or {}
+        disease = str(data.get('disease', '')).strip()
+        snomed = str(data.get('snomedCode', '')).strip()
+        icd11 = str(data.get('icd11Code', '')).strip()
+        ayurveda = str(data.get('ayurvedaCode', '')).strip()
+        siddha = str(data.get('siddhaCode', '')).strip()
+        unani = str(data.get('unaniCode', '')).strip()
+        if not any([disease, snomed, icd11, ayurveda, siddha, unani]):
+            return jsonify({'error': 'Provide at least one of disease/snomedCode/icd11Code/ayurvedaCode/siddhaCode/unaniCode'}), 400
+
+        mapped = code_mapper.find_by_any(
+            disease=disease or None,
+            snomed=snomed or None,
+            icd11=icd11 or None,
+            ayurveda=ayurveda or None,
+            siddha=siddha or None,
+            unani=unani or None
+        )
+        if not mapped:
+            return jsonify({'error': 'No mapping found'}), 404
+
+        systems = code_mapper.systems_for_response()
+        codings = []
+        display = disease or mapped.get('disease', '')
+        if mapped.get('snomed_code') or display:
+            codings.append({'system': systems.get('snomed'), 'code': mapped.get('snomed_code', ''), 'display': display})
+        if mapped.get('icd11_code'):
+            codings.append({'system': systems.get('icd11'), 'code': mapped.get('icd11_code'), 'display': display})
+        if mapped.get('ayurveda_code'):
+            codings.append({'system': systems.get('ayurveda'), 'code': mapped.get('ayurveda_code'), 'display': display})
+        if mapped.get('siddha_code'):
+            codings.append({'system': systems.get('siddha'), 'code': mapped.get('siddha_code'), 'display': display})
+        if mapped.get('unani_code'):
+            codings.append({'system': systems.get('unani'), 'code': mapped.get('unani_code'), 'display': display})
+
+        condition_resource = {
+            'resourceType': 'Condition',
+            'code': {
+                'coding': codings,
+                'text': display
+            }
+        }
+
+        return jsonify({
+            'success': True,
+            'mappings': mapped,
+            'systems': systems,
+            'condition': condition_resource
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
