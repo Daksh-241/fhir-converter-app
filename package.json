@@ -1,0 +1,22 @@
+{
+  "name": "fhir-converter-backend",
+  "version": "1.0.0",
+  "description": "Node.js backend for FHIR data conversion to CSV",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "axios": "^1.4.0",
+    "json2csv": "^5.0.7"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.22"
+  },
+  "keywords": ["fhir", "converter", "csv", "healthcare"],
+  "author": "FHIR Converter Team",
+  "license": "MIT"
+}
